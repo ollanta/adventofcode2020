@@ -1,0 +1,12 @@
+name: adventofcode2020
+
+dependencies:
+- base >= 4.7 && < 5
+- unordered-containers
+- vector
+- heap
+- matrix
+
+library:
+  source-dirs:
+  - lib
