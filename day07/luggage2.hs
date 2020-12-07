@@ -13,11 +13,7 @@ readD s = rules
     Right rules = parse (readRule `endBy` newline) "" s
 
     word = many1 letter
-    color = do
-      c1 <- word
-      space
-      c2 <- word
-      return $ c1 ++ " " ++ c2
+    color = word <> count 1 space <> word
 
     readRule = do
       container <- color
@@ -26,9 +22,7 @@ readD s = rules
       string "."
       return $ (container, containee)
 
-    readN = do
-      string "no other bags"
-      return []
+    readN = string "no other bags" *> pure []
     readC = do
       amount <- many1 digit
       space
