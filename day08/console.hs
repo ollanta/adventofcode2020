@@ -24,17 +24,23 @@ readD s = program
       return (op, num)
 
 
-solve prog = run 0 0 runCount
+solve prog = runProgram progA
   where
     progA = A.listArray (0, length prog - 1) prog
-    runCount = A.listArray (0, length prog -1) (repeat 0)
+
+
+runProgram progA = run 0 0 runCount
+  where
+    pbounds = A.bounds progA
+    runCount = A.listArray pbounds (repeat 0)
 
     run i acc rcs
       | rc > 0 = acc
-      | otherwise = run i' acc' (rcs A.// [(i, rc+1)])
+      | otherwise = run i' acc' rcs'
       where
         (op, n) = progA A.! i
         rc = rcs A.! i
+        rcs' = rcs A.// [(i, rc+1)]
 
         (i', acc') = case op of
           "nop" -> (i+1, acc)

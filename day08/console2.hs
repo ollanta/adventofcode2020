@@ -24,11 +24,10 @@ readD s = program
       return (op, num)
 
 
-solve prog = filter (/=Nothing) . map (run 0 0 runCount) $ progAs
+solve prog = filter (/=Nothing) . map runProgram $ progAs
   where
     l = length prog - 1
     progA = A.listArray (0, l) prog
-    runCount = A.listArray (0, l) (repeat 0)
 
     progAs = [progA A.// [(i, (flip op, n))] |
               (i, (op, n)) <- A.assocs progA,
@@ -37,13 +36,22 @@ solve prog = filter (/=Nothing) . map (run 0 0 runCount) $ progAs
     flip "nop" = "jmp"
     flip "jmp" = "nop"
 
-    run i acc rcs prg
+
+runProgram progA = run 0 0 runCount
+  where
+    pbounds = A.bounds progA
+    runCount = A.listArray pbounds (repeat 0)
+
+    l = snd pbounds
+
+    run i acc rcs
       | i > l  = Just acc
       | rc > 0 = Nothing
-      | otherwise = run i' acc' (rcs A.// [(i, rc+1)]) prg
+      | otherwise = run i' acc' rcs'
       where
-        (op, n) = prg A.! i
+        (op, n) = progA A.! i
         rc = rcs A.! i
+        rcs' = rcs A.// [(i, rc+1)]
 
         (i', acc') = case op of
           "nop" -> (i+1, acc)
