@@ -7,17 +7,21 @@ main = do
   interact (show . solve . readD)
   putStrLn ""
 
-readD :: String -> [(String, Char, Int)]
+readD :: String -> [(String, Int)]
 readD s = program
   where
     Right program = parse (readLine `endBy` newline) "" s
 
+    signedNum = fmap read (posNum <|> negNum)
+      where
+        posNum = string "+" *> many1 digit
+        negNum = string "-" <> many1 digit
+
     readLine = do
       op <- many1 letter
       space
-      dir <- oneOf "+-"
-      num <- many1 digit
-      return (op, dir, read num)
+      num <- signedNum
+      return (op, num)
 
 
 solve prog = filter (/=Nothing) . map (run 0 0 runCount) $ progAs
@@ -26,27 +30,22 @@ solve prog = filter (/=Nothing) . map (run 0 0 runCount) $ progAs
     progA = A.listArray (0, l) prog
     runCount = A.listArray (0, l) (repeat 0)
 
-    progAs = [
-      progA A.// [(i, (flip op, dir, n))] |
-      (i, (op, dir, n)) <- A.assocs progA,
-      op == "nop" || op == "jmp"
-                                          ]
+    progAs = [progA A.// [(i, (flip op, n))] |
+              (i, (op, n)) <- A.assocs progA,
+              op == "nop" || op == "jmp"]
+
     flip "nop" = "jmp"
     flip "jmp" = "nop"
-      
 
     run i acc rcs prg
       | i > l  = Just acc
       | rc > 0 = Nothing
       | otherwise = run i' acc' (rcs A.// [(i, rc+1)]) prg
       where
-        (op, dir, n) = prg A.! i
+        (op, n) = prg A.! i
         rc = rcs A.! i
-
-        add a '+' b = a+b
-        add a '-' b = a-b
 
         (i', acc') = case op of
           "nop" -> (i+1, acc)
-          "acc" -> (i+1, add acc dir n)
-          "jmp" -> (add i dir n, acc)
+          "acc" -> (i+1, acc + n)
+          "jmp" -> (i + n, acc)
