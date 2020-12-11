@@ -10,26 +10,26 @@ main = do
 solve :: [String] -> Int
 solve seats = M.size . M.filter (=='#') $ fixm
   where
-    minit = M.fromList [((y,x), c) | (y, row) <- zip [0..] seats, (x, c) <- zip [0..] row]
+    minit = M.fromList [((y,x), c) |
+                        (y, row) <- zip [0..] seats,
+                        (x, c) <- zip [0..] row]
 
     fms :: [M.HashMap (Integer, Integer) Char]
     fms = iterate update minit
 
     fixm = fst . head . dropWhile (uncurry (/=)) $ zip fms (tail fms)
 
-    update sm = M.mapWithKey (updateS sm) sm
-
-    updateS sm c '.' = '.'
-    updateS sm c '#'
-      | neighbours sm c '#' >= 5 = 'L'
-      | otherwise = '#'
-    updateS sm c 'L'
-      | neighbours sm c '#' == 0 = '#'
-      | otherwise = 'L'
-
-    neighbours sm (y,x) t = length . filter (==t) $ neighbourSeats
+    update sm = M.mapWithKey updateS sm
       where
-        neighbourSeats  = map (\dir -> findFirst dir) $ dirs
+        updateS c '#'
+          | occNeighbours sm c >= 5 = 'L'
+        updateS c 'L'
+          | occNeighbours sm c == 0 = '#'
+        updateS c v = v
+
+    occNeighbours sm (y,x) = length . filter (=='#') $ neighbourSeats
+      where
+        neighbourSeats  = map findFirst dirs
         dirs = [(dy, dx) |
                  dy <- [-1..1],
                  dx <- [-1..1],
