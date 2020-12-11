@@ -6,7 +6,6 @@ dependencies:
 - vector
 - heap
 - matrix
-- hashmap
 
 library:
   source-dirs:

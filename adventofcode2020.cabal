@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: dbb57294d595e3356048a109c0b64a2808329645def2c614fd1fc277e876e2bf
+-- hash: 17080d1a971b32a9d7e9bd8b705870767bc3d0b43ed0ef150d214a74bde1ba40
 
 name:           adventofcode2020
 version:        0.0.0
@@ -17,7 +17,6 @@ library
       lib
   build-depends:
       base >=4.7 && <5
-    , hashmap
     , heap
     , matrix
     , unordered-containers

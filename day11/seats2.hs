@@ -1,36 +1,40 @@
 import Data.List
-import qualified Data.HashMap as M
+import qualified Data.HashMap.Strict as M
 
 main :: IO ()
 main = do
-  interact (show . s' . solve . lines)
+  interact (show . solve . lines)
   putStrLn ""
 
-s' = M.size . M.filter (=='#') . snd
 
-solve :: [String] -> (Integer, M.Map (Integer,Integer) Char)
-solve seats = head . dropWhile ((>0) . fst) $ ms
+solve :: [String] -> Int
+solve seats = M.size . M.filter (=='#') $ fixm
   where
-    m = M.fromList [((y,x), c) | (y, row) <- zip [0..] seats, (x, c) <- zip [0..] row]
-    rows = length seats
-    cols = length (head seats)
+    minit = M.fromList [((y,x), c) | (y, row) <- zip [0..] seats, (x, c) <- zip [0..] row]
 
-    ms = iterate (\(_, m) -> update m) (1, m)
+    fms :: [M.HashMap (Integer, Integer) Char]
+    fms = iterate update minit
 
-    update sm = M.mapAccumWithKey (updateS sm) 0 sm
+    fixm = fst . head . dropWhile (uncurry (/=)) $ zip fms (tail fms)
 
-    updateS sm a c '.' = (a, '.')
-    updateS sm a c '#'
-      | neighbours sm c '#' >= 5 = (a+1, 'L')
-      | otherwise = (a, '#')
-    updateS sm a c 'L'
-      | neighbours sm c '#' == 0 = (a+1, '#')
-      | otherwise = (a, 'L')
+    update sm = M.mapWithKey (updateS sm) sm
 
-    neighbours sm (y,x) t = length . filter (==t) . map (\dir -> findFirst dir) $ dirs
+    updateS sm c '.' = '.'
+    updateS sm c '#'
+      | neighbours sm c '#' >= 5 = 'L'
+      | otherwise = '#'
+    updateS sm c 'L'
+      | neighbours sm c '#' == 0 = '#'
+      | otherwise = 'L'
+
+    neighbours sm (y,x) t = length . filter (==t) $ neighbourSeats
       where
-        dirs = [(-1,-1), (-1,0), (-1,1), (0,-1), (0,1), (1,-1), (1,0), (1,1)]
-        findFirst (dy,dx) = head . dropWhile (=='.') $ inDir
+        neighbourSeats  = map (\dir -> findFirst dir) $ dirs
+        dirs = [(dy, dx) |
+                 dy <- [-1..1],
+                 dx <- [-1..1],
+                 (dy, dx) /= (0, 0)]
+        findFirst (dy,dx) = head . dropWhile (=='.') $ seatsInDir
           where
-            inDir = map (\c' -> M.findWithDefault 'L' c' sm) [(y+n*dy, x+n*dx) | n <- [1..]]
+            seatsInDir = map (\c' -> M.lookupDefault 'L' c' sm) [(y+n*dy, x+n*dx) | n <- [1..]]
 
