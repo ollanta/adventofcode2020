@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 17080d1a971b32a9d7e9bd8b705870767bc3d0b43ed0ef150d214a74bde1ba40
+-- hash: 09ed01afaf55c32df847b0e2b79488318a7dd1c88a19b45e400f851a36aa36c6
 
 name:           adventofcode2020
 version:        0.0.0
@@ -18,7 +18,7 @@ library
   build-depends:
       base >=4.7 && <5
     , heap
-    , matrix
+    , linear
     , unordered-containers
     , vector
   default-language: Haskell2010
