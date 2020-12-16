@@ -20,13 +20,10 @@ readD s = inp
     readInput = do
       rules <- readRule `endBy` newline
       newline
-      string "your ticket:"
+      string "your ticket:" >> newline
+      yours <- readTicket <* newline
       newline
-      yours <- readTicket
-      newline
-      newline
-      string "nearby tickets:"
-      newline
+      string "nearby tickets:" >> newline
       nearby <- readTicket `endBy` newline
       return (rules, yours, nearby)
 
