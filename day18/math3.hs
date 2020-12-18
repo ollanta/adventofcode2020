@@ -11,15 +11,17 @@ main = do
 solve1 :: String -> Integer
 solve1 s = solveWithTable [[plusOp, multOp]] s
 
+
 solve2 :: String -> Integer
 solve2 s = solveWithTable [[plusOp], [multOp]] s
+
 
 solveWithTable table s = sum rs
   where
     Right rs = parse (expr `endBy` newline) "" (filter (/=' ') s)
 
-    expr    = buildExpressionParser table term
-  
+    expr = buildExpressionParser table term
+
     term = between (string "(") (string ")") expr
        <|> integer
 
