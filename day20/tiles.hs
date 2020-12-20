@@ -24,23 +24,15 @@ readD s = tiles
 
 solve tiles = product . M.keys . M.filter (==4) $ uniqueByTile
   where
-    edgeNs = [(name, edge) | (name, tile) <- tiles, edge <- genEdgeN tile]
+    edgeMap = M.fromListWith (++) [(edge, [name]) |
+                                   (name, tile) <- tiles,
+                                   edge <- genEdges tile]
 
-    edgeNMap = foldl (\m (n, e) -> M.insertWith (++) e [n] m) M.empty edgeNs
+    uniqueEdges = M.map head . M.filter ((==1) . length) $ edgeMap
 
-    uniqueEdges = M.map head . M.filter ((==1) . length) $ edgeNMap
-
-    uniqueByTile = foldl (\m (en, n) -> M.insertWith (+) n 1 m) M.empty (M.toList uniqueEdges)
+    uniqueByTile = M.fromListWith (+) $ zip (M.elems uniqueEdges) (repeat 1)
 
 
-genEdgeN :: [String] -> [Integer]
-genEdgeN tile = map toNumber edges ++ map (toNumber . reverse) edges
+genEdges tile = edges ++ map reverse edges
   where
     edges = [head tile, last tile, map head tile, map last tile]
-    
-
-
-toNumber string = sum $ zipWith (\c p -> toBit c * 2^p) string [0..]
-  where
-    toBit '.' = 0
-    toBit '#' = 1
