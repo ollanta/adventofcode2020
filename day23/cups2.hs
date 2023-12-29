@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 import Text.Parsec
 import qualified Data.HashMap.Strict as M
 
@@ -29,7 +30,7 @@ solve cups = showMap . head . drop n_moves . iterate move $ (head morecups, last
 
     cupMap = M.fromList $ zip morecups (tail $ cycle morecups)
 
-    move (current, previous, cupMap) = (next, current, M.union updateMap cupMap)
+    move (!current, previous, cupMap) = (next, current, M.union updateMap cupMap)
       where
         (_:p1:p2:p3:next:_) = iterate (cupMap M.!) $ current
 
