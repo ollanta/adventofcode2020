@@ -1,5 +1,4 @@
 import Text.Parsec
-import Text.Parsec.Token
 import qualified Data.HashMap.Strict as M
 
 
@@ -35,7 +34,7 @@ readD s = rules
     readRSeq = RSeq . map (map read) <$> (many1 digit `sepEndBy` string " ") `sepBy` string "| "
 
 
-solve (rules, messages) = length . filter (matches (ruleM M.! 0)) $ messages
+solve (rules, messages) = length . filter (matches rule0) $ messages
   where
     ruleM = M.fromList rules
     rule0 = ruleM M.! 0
