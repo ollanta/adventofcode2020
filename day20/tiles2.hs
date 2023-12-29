@@ -9,7 +9,10 @@ main = do
   putStrLn ""
 
 
-readD :: String -> [(Integer, [String])]
+type Tile = [String]
+
+
+readD :: String -> [(Integer, Tile)]
 readD s = tiles
   where
     Right tiles = parse (readTile `sepBy` newline) "" s
@@ -23,21 +26,22 @@ readD s = tiles
       return $ (read num, rows)
 
 
-solve tiles = result
+solve tiles = countNessies prunedTile
   where
     tileMap = M.fromList tiles
     
-    edgeIds = [(name, edgeId) | (name, tile) <- tiles, edgeId <- genEdgeIds tile]
-    edgeIdMap = foldl (\m (n, eid) -> M.insertWith (++) eid [n] m) M.empty edgeIds
+    edgeMap = M.fromListWith (++) [(edge, [name]) |
+                                   (name, tile) <- tiles,
+                                   edge <- genEdges tile]
 
-    uniqueEdges = M.map head . M.filter ((==1) . length) $ edgeIdMap
-    uniqueByTile = foldl (\m (en, n) -> M.insertWith (+) n 1 m) M.empty (M.toList uniqueEdges)
+    uniqueEdges = M.map head . M.filter ((==1) . length) $ edgeMap
+
+    uniqueByTile = M.fromListWith (+) $ zip (M.elems uniqueEdges) (repeat 1)
 
     cornerTiles = M.keys . M.filter (==4) $ uniqueByTile
 
     neighbourPairs = [(name, neighbour) |
-                       nList <- M.elems edgeIdMap,
-                       length nList /= 1,
+                       nList <- M.elems edgeMap,
                        name <- nList,
                        neighbour <- nList,
                        name /= neighbour]
@@ -69,7 +73,6 @@ solve tiles = result
 
     emap = head eligibleMaps
     coords = [(x,y) | y <- [0..size-1], x <- [0..size-1]]
-    --smap :: [M.HashMap (Integer,Integer) [String]]
     smap = head $ genSMap coords M.empty
 
     genSMap :: [(Integer,Integer)] -> M.HashMap (Integer,Integer) [String] -> [M.HashMap (Integer,Integer) [String]]
@@ -86,22 +89,16 @@ solve tiles = result
 
         (x,y) = c
         matchesLeft tileV
-          | x == 0    = isUnique . leftEdge $ tileV
-          | otherwise = rightEdge leftTile == leftEdge tileV
+          | x == 0    = True
+          | otherwise = map last leftTile == map head tileV
           where
             leftTile = m M.! (x-1,y)
-            rightEdge = map last
-            leftEdge = map head
               
         matchesUp tileV
-          | y == 0    = isUnique . topEdge $ tileV
-          | otherwise = bottomEdge upperTile == topEdge tileV
+          | y == 0    = True
+          | otherwise = last upperTile == head tileV
           where
             upperTile = m M.! (x,y-1)
-            topEdge = head
-            bottomEdge = last
-
-        isUnique edge = M.member (toEId edge) uniqueEdges
 
     prunedSMap = M.map (middle . map middle) smap
 
@@ -112,31 +109,30 @@ solve tiles = result
 
     prunedTile = showM prunedSMap
 
+
+countNessies tile = (maxfound, dirt)
+  where
+    dirt = countHash tile - maxfound * countHash nessie
+    countHash tile = length . concatMap (filter (=='#')) $ tile
+
     nessie = ["                  # ",
               "#    ##    ##    ###",
               " #  #  #  #  #  #   "]
-    countNessies tile = (length found, dirt)
-      where
-        dirt = countHash tile - (length found) * countHash nessie
 
-        tsize = length tile
-        nwidth = head . map length $ nessie
-        nheight = length nessie
+    tsize = length tile
+    nwidth = head . map length $ nessie
+    nheight = length nessie
 
-        found = [(x,y) |
-                  x <- [0..tsize-nwidth-1],
-                  y <- [0..tsize-nheight-1],
-                  isNessie (x,y)]
+    maxfound = maximum . map findIn $ transformations tile
+    findIn tile = length [(x,y) |
+                           x <- [0..tsize-nwidth-1],
+                           y <- [0..tsize-nheight-1],
+                           isNessie (x,y) tile]
 
-        isNessie (x,y) = and [(tile !! (y+ny)) !! (x+nx) == '#' |
-                              (ny, nrow) <- zip [0..] nessie,
-                              (nx, c) <- zip [0..] nrow,
-                              c == '#']
-
-        countHash tile = length . concatMap (filter (=='#')) $ tile
-                          
-    result = maximum $ map countNessies (transformations prunedTile)
-
+    isNessie (x,y) tile = all (=='#') [(tile !! (y+ny)) !! (x+nx) |
+                                       (ny, nrow) <- zip [0..] nessie,
+                                       (nx, c) <- zip [0..] nrow,
+                                       c == '#']
 
 
 showM :: M.HashMap (Integer,Integer) [String] -> [String]
@@ -148,22 +144,16 @@ showM map = [concat [map M.! (mx,my) !! row | mx <- [0..sizeM]] |
     sizeI = length . head . M.elems $ map
 
 
-genEdgeIds :: [String] -> [Integer]
-genEdgeIds tile = map toEId edges ++ map (toEId . reverse) edges
+genEdges tile = edges ++ map reverse edges
   where
     edges = [head tile, last tile, map head tile, map last tile]
-    
-
-toEId string = sum $ zipWith (\c p -> toBit c * 2^p) string [0..]
-  where
-    toBit '.' = 0
-    toBit '#' = 1
 
 
 transformations tile = [tile''' |
                         tile' <- [tile, reverse tile],
                         tile'' <- [tile', map reverse tile'],
                         tile''' <- take 4 . iterate rotate $ tile'']
+
 
 rotate tile = [[row !! ix | row <- tile] |
                ix <- [size-1,size-2..0]]
